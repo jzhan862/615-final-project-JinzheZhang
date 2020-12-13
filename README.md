@@ -9,7 +9,7 @@ You can skip the Kaggle part(615-bigdataset.rmd +jobsdata.json) which is used to
 
 The aim of this project is to explore jobs and try to find the common vocabulary used in the job description.
 
-Job type, company, title, location and description were analyzed below. For descriptions, texting manipulation was used to clean and dig the insight.
+Job type, company, title, location and description were analyzed. For descriptions, texting manipulation was used to clean and dig the insight.
 
 The data set which is from Github Job and, specifically jobs for software developers，data science.Linki is https://jobs.github.com/api. 
 
