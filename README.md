@@ -13,7 +13,7 @@ Job type, company, title, location and description were analyzed. For descriptio
 
 The data set which is from Github Job and, specifically jobs for software developers，data science.Linki is https://jobs.github.com/api. 
 
-The larger data set whcih is from Kaggle and jobs are from Australia.https://www.kaggle.com/vipulanand/jobs-data.
+The larger data set which is from Kaggle and jobs are from Australia.https://www.kaggle.com/vipulanand/jobs-data.
 
 I uploaded the Shinyapp which name is "615-Jinzhe-Zhang" on the BUrconnect.
 
