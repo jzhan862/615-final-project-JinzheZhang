@@ -2,7 +2,7 @@
 
 Those files are used to EDA and analysis the data sets from Github and Kaggle.
 
-I only made Shinyapp(server.r+ui.r), HTML and RMD for the Githubjobs data set.
+I only made Shinyapp(server.r+ui.r), PDF and RMD for the Githubjobs data set.
 
 You can skip the Kaggle part(615-bigdataset.rmd +jobsdata.json) which is used to test the reproducibility of code.
 
