@@ -4,7 +4,7 @@ Those files are used to EDA and analysis the data sets from Github and Kaggle.
 
 I only made Shinyapp, HTML and RMD for the Githubjobs data set.
 
-You can skip the Kaggle part(615-jobbigdata.rmd +jobsdata.json) which is used to test the reproducibility of code.
+You can skip the Kaggle part(615-bigdataset.rmd +jobsdata.json) which is used to test the reproducibility of code.
 
 
 The aim of this project is to explore jobs and try to find the common vocabulary used in the job description.
