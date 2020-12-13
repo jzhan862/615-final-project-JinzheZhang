@@ -1,0 +1,176 @@
+---
+title: "Data Analysis for Job Positions"
+a
+output:
+  html_document: 
+    toc: yes
+    theme: cosmo
+    highlight: zenburn
+date: Dec 06 2020
+---
+```{r}
+library(devtools)
+library(tidyverse)
+library(stringr) 
+library(treemap)
+library(plotly)
+library(httr)
+library(jsonlite)
+library(wordcloud2)
+library(RColorBrewer)
+library(tm)
+library(tokenizers)
+library(tidytext)
+library(plotly)
+library(htmlwidgets)
+library(webshot)
+library(widgetframe)
+library(gridExtra)
+library(naniar)
+library(knitr) 
+library(tibble) 
+```
+
+#1.Introduction:
+This file is used to EDA and analysis the data set from Australia.
+Due to the large set, it will take like 5min to produce the word cloud.
+
+```{r warning=FALSE, paged.print=TRUE}
+
+table_json<- fromJSON("/Users/admin/Downloads/jobsdata.json", flatten=TRUE)
+table_json=na.omit(table_json)
+
+names(table_json)
+glimpse(table_json)
+df <- table_json %>% select(Company_Rating,`No. of Reviews` , Company_Name, Job_Location, Job_Title, Job_Description)
+df <- as.data.frame(df)
+df %>% head() %>% as.tibble() %>% view()
+```
+
+# 2. Exploratory Data Analysis
+
+## 2.1 Missing Value
+
+There is no missing existing in the data set.
+```{r}
+missing_col<-df %>% is.na() %>% colSums()
+  missing_col <- data.frame(missing_col) %>% rownames_to_column()
+  missing_df <- missing_col %>%
+    mutate(Percentage_of_Missing=missing_col/nrow(df)*100) %>% arrange(desc(Percentage_of_Missing))
+print(missing_df)
+vis_miss(df)
+
+```
+
+## 2.2 Summary for Type, Company, and Location
+
+I round the floating rating number to integer that four types of job rating, i.e. from 2-5. There are nearly 4000 jobs with rating 4.
+Top 5 companies Name are HAYS, Government of South Australia, Queensland Government, ACT Government, and Domino's.
+Top 5 work locations are Canberra ACT, Darwin NT, Perth WA, Adelaide SA and Brisbane QSD.
+```{r, fig.width=18, fig.height=10}
+df %>% summarise(distinct_rating=n_distinct(Company_Rating), distinct_review=n_distinct(`No. of Reviews`),distinct_Name=n_distinct(Company_Name), distinct_location=n_distinct(Job_Location))
+df$Company_Rating=round(as.numeric(df$Company_Rating),digits=0)
+
+Rating_bar <- ggplot(df, aes(x=Company_Rating))        +
+    geom_bar(fill="green") +     
+            theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
+                  legend.position = "none", plot.title = element_text(hjust = 0.5, size=25), text = element_text(size=20)) + ggtitle("Rating")
+company_bar <- ggplot(df %>% group_by(Company_Name) %>% summarise(count_company=n()) %>% arrange(-count_company) %>% head(5), aes(x=reorder(Company_Name, count_company), y=count_company)) +
+            geom_bar(stat="identity", fill="darkred") +coord_flip()+
+            theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
+                  legend.position = "none", plot.title = element_text(hjust = 0.5, size=25), text = element_text(size=20)) + ggtitle("Company")
+Location_bar <- ggplot(df %>% group_by(Job_Location) %>% summarise(count_title=n()) %>% arrange(-count_title) %>% head(5), aes(x=reorder(Job_Location, count_title), y=count_title)) +
+            geom_bar(stat="identity", fill="purple") +coord_flip()+
+            theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
+                  legend.position = "none", plot.title = element_text(hjust = 0.5, size=25), text = element_text(size=20)) + ggtitle("Location")
+
+Rating_bar
+company_bar
+Location_bar
+```
+
+## 2.3 Job_Description
+### 2.3.1 Common words
+First, check the top 20 common words in Job_Description. From plot below, there are some html decoration words which are from websites existing. Besides those html format words, team, work, experience, customer and etc. are the most common words in the Job_Descriptions.
+```{r warning=FALSE}
+STOPWORDS <- stopwords(kind = "en")
+generate_cm_wd <- function(ccc){
+  words <- paste(ccc, collapse = " ") 
+  words <- tokenize_words(words)
+  tab <- table(words[[1]])
+  tab <- data_frame(word = names(tab), count = as.numeric(tab))
+  tab <- tab %>% filter(!word %in% STOPWORDS) %>% arrange(desc(count)) %>% head(20)
+  return(tab)
+}
+
+df_cm_wd <- generate_cm_wd(df$Job_Description)
+df_cmwd_bar<-ggplot(data=df_cm_wd, aes(x=word, y=count, fill=count)) +
+  geom_bar(stat="identity")+coord_flip()+
+  scale_fill_continuous(low="blue", high="green")+
+  theme_minimal() +theme(axis.title.y = element_blank(),
+                          legend.position = "none")
+df_cmwd_bar
+
+```
+
+### 2.3.2 Number of words in each job Job_Description and Average length for each job Job_Description
+Most job Job_Descriptions contain between 250 and 800 words. The distribution is little bit right skewed. Job Job_Descriptions with more than 1000 words are less than 50.
+
+Average words in the Job_Description is right skewed
+
+```{r}
+df <- df %>% mutate(text_words = sapply(strsplit(df$Job_Description, " "), length))
+df <- df %>% mutate(text_len = str_count(Job_Description))
+df <- df %>% mutate(text_avg_words = text_len/text_words)
+
+# Number of words
+num_words <- ggplot(df, aes(x=text_words)) +
+            geom_histogram(fill="lightblue") +     
+            theme(legend.position = "none", plot.title = element_text(size = 20, face = "bold", hjust = 0.5), text = element_text(size=12)) + ggtitle("Number of Words")
+# Average words
+ave_words <- ggplot(df, aes(x=text_avg_words)) +
+            geom_density(fill="lightblue") +     
+            theme(legend.position = "none", plot.title = element_text(size = 20, face = "bold", hjust = 0.5), text = element_text(size=12)) + ggtitle("Average Length of Words")
+
+
+num_words
+ave_words
+```
+
+### 2.3.3 Clean text and word cloud
+```{r}
+stopwords_regex = paste(stopwords('en'), collapse = '\\b|\\b')
+stopwords_regex = paste0('\\b', stopwords_regex, '\\b')
+df$Job_Description<- str_replace_all(df$Job_Description, stopwords_regex, '')
+df$Job_Description <- str_replace_all(df$Job_Description, regex('[:punct:]'), "")
+df$Job_Description <- str_replace_all(df$Job_Description, regex('[:digit:]'), "")
+df$Job_Description <- str_replace_all(df$Job_Description, regex('<p>'), " ")
+df$Job_Description <- str_replace_all(df$Job_Description, regex('und'), " ")
+df$Job_Description <- str_replace_all(df$Job_Description, regex('</p>'), " ")
+df$Job_Description <- str_replace_all(df$Job_Description, regex('will'), " ")
+df$Job_Description <- str_replace_all(df$Job_Description, regex('you'), "")
+df$Job_Description <- str_replace_all(df$Job_Description, regex('the'), "")
+df$Job_Description <- str_to_lower(df$Job_Description, locale = 'en')
+Job_Description <- Corpus(VectorSource(df %>% select(Job_Description)))
+desp <- Job_Description %>% 
+    tm_map(removeNumbers) %>%
+    tm_map(removePunctuation) %>%
+    tm_map(removeWords, stopwords("english")) %>% 
+    tm_map(stripWhitespace)
+desp <- tm_map(desp, content_transformer(tolower))
+
+desp <- TermDocumentMatrix(desp) 
+matrix <- as.matrix(desp) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+pre_words <- data.frame(word = names(words),freq=words)
+
+
+clean_desp <- wordcloud2(pre_words, size=1.6, color='random-dark')+ WCtheme(1)
+clean_desp
+
+ggplot(pre_words %>% head(10), aes(x=reorder(word, freq), y=freq)) +
+                    geom_bar(stat="identity", fill="steelblue")+coord_flip()+
+                    theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
+                          legend.position = "none", plot.title = element_text(hjust = 0.5, size=25), text = element_text(size=20))+ ggtitle("Count of Words for Job_Description")
+
+```
